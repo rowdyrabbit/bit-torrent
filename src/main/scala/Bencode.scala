@@ -3,31 +3,14 @@ import scala.io.Source
 abstract class BValue
 case class BInt(num: Int) extends BValue
 case class BStr(str: String) extends BValue
-case class BList(item: BValue) extends BValue
+case class BList(item: List[BValue]) extends BValue
 case class BDict(map: Map[BValue, BValue]) extends BValue
 
 
 object Bencode {
 
-  def main(args: Array[String]) {
 
-    val filename = args(0)
-    val torrentContents = readFile(filename)
-    // Got the torrent file, now process it and do stuff with it.
-
-  }
-
-  private def readFile(filename: String): List[Any] = {
-
-    val source = Source.fromFile(filename, "UTF-8")
-    val is = source.reader()
-    val bytes: Array[Char] = Stream.continually(is.read).takeWhile(-1 !=).map(_.toChar).toArray
-    source.close()
-
-    decode(bytes)
-  }
-
-  def decode(fileContents: Array[Char]): List[Any] = {
+  def decode(fileContents: Array[Char]): List[BValue] = {
     loop(fileContents, List())._2
   }
 
