@@ -1,26 +1,34 @@
-import scala.io.Source
+import scala.collection.immutable.ListMap
 
 abstract class BValue
 case class BInt(num: Int) extends BValue
 case class BStr(str: String) extends BValue
 case class BList(item: List[BValue]) extends BValue
-case class BDict(map: Map[BValue, BValue]) extends BValue
+case class BDict(map: ListMap[BValue, BValue]) extends BValue
 
 
 object Bencode {
+
+  def encode(value: BValue) : String = {
+    value match {
+      case value: BInt => "i" + value.num + "e"
+      case value: BStr => value.str.length + ":" + value.str
+      case value: BList => "l" + value.item.map( x => encode(x)).mkString + "e"
+      case value: BDict =>  "d" + value.map.map( x => (encode(x._1) + encode(x._2)).mkString ).mkString + "e"
+      case _ => ""
+    }
+  }
+
+
+  def string(input: String): String =
+    input.length + ":" + input
 
 
   def decode(fileContents: Array[Char]): List[BValue] = {
     loop(fileContents, List())._2
   }
 
-  /**
-   *
-   * @param fileContents
-   * @param result
-   * @return
-   */
-  def loop(fileContents: IndexedSeq[Char], result: List[BValue]) : (IndexedSeq[Char], List[BValue]) = {
+  private def loop(fileContents: IndexedSeq[Char], result: List[BValue]) : (IndexedSeq[Char], List[BValue]) = {
     fileContents match {
       case s if (s.isEmpty) =>  (IndexedSeq[Char](), result)
       case ch =>  fileContents(0) match {
@@ -44,8 +52,10 @@ object Bencode {
   def parseDictionary(fileContents: IndexedSeq[Char], result: List[BValue]): (IndexedSeq[Char], List[BValue]) = {
     val result2 = loop(fileContents.drop(1), List[BValue]())
     val listOfVals = result2._2
-    val map = BDict(listOfVals.sliding(2, 2).collect { case List(a, b) => (a, b)}.toMap)
 
+    val listOfPairs = listOfVals.sliding(2,2).collect { case List(a,b) => (a,b)}.toList
+
+    val map = BDict(listOfPairs.foldLeft(ListMap[BValue, BValue]()){(m, elem) => m + (elem._1 -> elem._2) })
     loop(result2._1, result :+ map)
   }
 
