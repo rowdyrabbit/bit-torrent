@@ -17,7 +17,7 @@ object BTClient {
       data <- MetaData.parseTorrentFileStructure(bencodeContents)
       dataHash = hexStringURLEncode(bytes2hex(sha1(data.infoHash)))
 
-      params = Map("port" -> "63211", "uploaded" -> "0", "downloaded" -> "0", "left" -> "1277987")
+      params = Map("port" -> "6881", "uploaded" -> "0", "downloaded" -> "0", "left" -> "1277987")
       peerIdParam = s"peer_id=${dataHash}"
       infoSHAParam = s"info_hash=${dataHash}"
       encodedParams = (for ((k, v) <- params) yield URLEncoder.encode(k) + "=" + URLEncoder.encode(v)).mkString("&")
@@ -45,8 +45,11 @@ object BTClient {
   }
 
   def parsePeers(peers: String) {
-    val bytes = peers.getBytes.grouped(6).toList
-    bytes
+    val bytes = peers.getBytes("ISO-8859-1").grouped(6).toList
+    bytes.foreach(x => println(x.mkString(".")))
+    val ips = bytes.map(x => x.slice(0, 4).mkString("."))
+    val ports = bytes.map { x => (x(4) << 8) + x(5) } //convert 2 bytes to an int
+    ips zip ports
   }
 
   def hexStringURLEncode(x: String) = {
